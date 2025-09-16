@@ -1,0 +1,146 @@
+import { useState } from "react";
+import api from "../api.js";
+
+export default function Saida() {
+  const [movimentacoes, setMovimentacoes] = useState([]);
+  const [novoItem, setNovoItem] = useState({ tipo: "", tamanho: "", quantidade: "" });
+
+  const tamanhosDisponiveis = ["PP", "P", "M", "G", "GG", "G3", "G4"];
+
+  // adiciona item ao carrinho
+  const adicionarItem = () => {
+    if (!novoItem.tipo || !novoItem.quantidade) {
+      alert("Preencha o tipo e a quantidade.");
+      return;
+    }
+    setMovimentacoes([...movimentacoes, novoItem]);
+    setNovoItem({ tipo: "", tamanho: "", quantidade: "" });
+  };
+
+  // remove item do carrinho
+  const removerItem = (index) => {
+    setMovimentacoes(movimentacoes.filter((_, i) => i !== index));
+  };
+
+  // envia para backend
+  const handleSaida = async () => {
+    try {
+      const payload = {
+        itens: movimentacoes.map((m) => ({
+          ...m,
+          quantidade: Number(m.quantidade) || 0,
+          acao: "saida",
+        })),
+      };
+      const res = await api.post("/movimentar", payload);
+      alert(res.data.mensagem.join("\n"));
+      setMovimentacoes([]); // limpa carrinho
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.status === 403) {
+        alert("Você não tem autorização para registrar saídas.");
+      } else {
+        alert("Erro ao registrar saídas.");
+      }
+    }
+  };
+
+  return (
+    <div className="flex gap-6 mt-10 px-6">
+      {/* Coluna esquerda: formulário */}
+      <div className="bg-gray-900 text-white p-6 rounded-xl shadow-lg w-1/2">
+        <h1 className="text-2xl font-bold mb-4 text-center">Registrar Saída</h1>
+
+        {/* Tipo */}
+        <label className="block mb-2">Tipo:</label>
+        <select
+          value={novoItem.tipo}
+          onChange={(e) => setNovoItem({ ...novoItem, tipo: e.target.value })}
+          className="w-full p-2 mb-4 rounded bg-gray-800 border border-gray-600"
+        >
+          <option value="">Selecione...</option>
+          <option value="Macacão">Macacão</option>
+          <option value="Botas">Botas</option>
+          <option value="Panos">Panos</option>
+          <option value="Óculos">Óculos</option>
+        </select>
+
+        {/* Tamanho */}
+        {(novoItem.tipo === "Macacão" || novoItem.tipo === "Botas") && (
+          <>
+            <label className="block mb-2">Tamanho:</label>
+            <select
+              value={novoItem.tamanho}
+              onChange={(e) => setNovoItem({ ...novoItem, tamanho: e.target.value })}
+              className="w-full p-2 mb-4 rounded bg-gray-800 border border-gray-600"
+            >
+              <option value="">Selecione...</option>
+              {tamanhosDisponiveis.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {/* Quantidade */}
+        <label className="block mb-2">Quantidade:</label>
+        <input
+          type="text"
+          value={novoItem.quantidade}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, "");
+            setNovoItem({ ...novoItem, quantidade: val });
+          }}
+          className="w-full p-2 mb-4 rounded bg-gray-800 border border-gray-600"
+          placeholder="Digite a quantidade"
+        />
+
+        <button
+          onClick={adicionarItem}
+          className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded font-semibold"
+        >
+          + Adicionar
+        </button>
+      </div>
+
+      {/* Coluna direita: carrinho */}
+      <div className="bg-gray-900 text-white p-6 rounded-xl shadow-lg w-1/2">
+        <h2 className="text-xl font-bold mb-4 text-center">Itens para saída</h2>
+
+        {movimentacoes.length === 0 ? (
+          <p className="text-gray-400">Nenhum item adicionado</p>
+        ) : (
+          <ul className="space-y-2">
+            {movimentacoes.map((m, i) => (
+              <li
+                key={i}
+                className="flex justify-between items-center bg-gray-800 p-2 rounded"
+              >
+                <span>
+                  {m.tipo} {m.tamanho && `(${m.tamanho})`} - {m.quantidade} un.
+                </span>
+                <button
+                  onClick={() => removerItem(i)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Remover
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {movimentacoes.length > 0 && (
+          <button
+            onClick={handleSaida}
+            className="w-full mt-4 bg-red-600 hover:bg-red-700 p-2 rounded font-semibold"
+          >
+            Registrar Saídas
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
