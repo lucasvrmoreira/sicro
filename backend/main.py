@@ -11,7 +11,7 @@ from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext # type: ignore
 from dotenv import load_dotenv
 import os
-
+from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -24,6 +24,12 @@ app = FastAPI()
 models.Base.metadata.create_all(bind=database.engine)
 
 # habilita CORS (permitir frontend acessar)
+
+origins = [
+    "http://localhost:5173",              # dev local
+    "https://sicro-bqcl.vercel.app"       # produção no Vercel
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_URL],
