@@ -32,7 +32,7 @@ origins = [
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=origins,  # usa a lista com localhost e vercel
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
