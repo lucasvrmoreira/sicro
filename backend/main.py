@@ -33,11 +33,6 @@ app.add_middleware(
 )
 
 
-# Config JWT
-SECRET_KEY = "sua_chave_super_secreta"  # ⚠️ depois trocar pra variável de ambiente
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 10
-
 
 # Dependência do FastAPI para pegar token no header
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")

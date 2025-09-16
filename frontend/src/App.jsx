@@ -1,5 +1,5 @@
 import { Routes, Route, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Entrada from "./pages/entrada.jsx";
 import Saida from "./pages/saida.jsx";
@@ -7,22 +7,25 @@ import Saldo from "./pages/saldo.jsx";
 import Login from "./pages/login.jsx";
 
 function App() {
-  // já inicializa verificando se tem token no localStorage
-  const [isAuth] = useState(() => !!localStorage.getItem("token"));
+  const [isAuth, setIsAuth] = useState(!!localStorage.getItem("token"));
+
+  useEffect(() => {
+    const checkAuth = () => setIsAuth(!!localStorage.getItem("token"));
+    window.addEventListener("storage", checkAuth);
+    return () => window.removeEventListener("storage", checkAuth);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Navbar só aparece se logado */}
       {isAuth && (
         <div className="flex justify-center gap-8 py-4 text-lg font-semibold">
           <Link to="/entrada">Entrada</Link>
           <Link to="/saida">Saída</Link>
           <Link to="/saldo">Saldo</Link>
-
-          {/* Botão de logout */}
           <button
             onClick={() => {
               localStorage.removeItem("token");
+              setIsAuth(false); // força atualização
               window.location.href = "/login";
             }}
             className="ml-4 text-red-400"
@@ -34,7 +37,6 @@ function App() {
 
       <Routes>
         {!isAuth ? (
-          // se não estiver logado → sempre vai para Login
           <Route path="*" element={<Login />} />
         ) : (
           <>
