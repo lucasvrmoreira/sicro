@@ -2,32 +2,33 @@ import { useState, useEffect } from "react";
 import api from "../api.js";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import Lottie from "lottie-react";
+import cosmosAnimation from "../assets/Cosmos.json"; // animação
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showWelcome, setShowWelcome] = useState(true); // controla mensagem
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [loading, setLoading] = useState(false); // controla animação
   const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowWelcome(false);
-    }, 3000); // 3 segundos
+    }, 3000);
     return () => clearTimeout(timer);
   }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const res = await api.post(
         "/token",
-        new URLSearchParams({
-          username,
-          password,
-        }),
+        new URLSearchParams({ username, password }),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
       );
 
@@ -37,6 +38,7 @@ export default function Login() {
       window.location.href = "/saldo";
     } catch (err) {
       setError("Usuário ou senha incorretos");
+      setLoading(false); // volta pro texto se der erro
     }
   };
 
@@ -86,9 +88,14 @@ export default function Login() {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded font-semibold"
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded font-semibold flex justify-center items-center"
         >
-          Entrar
+          {loading ? (
+            <Lottie animationData={cosmosAnimation} loop={true} className="w-8 h-8" />
+          ) : (
+            "Entrar"
+          )}
         </button>
       </form>
     </div>
