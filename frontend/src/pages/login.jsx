@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../api.js";
 import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
 import Lottie from "lottie-react";
-import cosmosAnimation from "../assets/Cosmos.json"; // animação
+import cosmosAnimation from "../assets/Cosmos.json";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -35,7 +34,7 @@ export default function Login() {
       const token = res.data.access_token;
       localStorage.setItem("token", token);
 
-      window.location.href = "/saldo";
+      navigate("/saldo");
     } catch (err) {
       setError("Usuário ou senha incorretos");
       setLoading(false); // volta pro texto se der erro
@@ -46,7 +45,7 @@ export default function Login() {
     <div className="relative flex items-center justify-center min-h-screen bg-gray-950 text-white">
       {/* Logo no fundo */}
       <img
-        src={logo}
+        src="/logo.png"
         alt="Logo"
         className="absolute inset-0 m-auto w-[600px] max-h-screen opacity-20 block"
       />
