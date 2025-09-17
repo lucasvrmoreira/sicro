@@ -16,7 +16,7 @@ load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 30))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 10))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # cria a aplicação FastAPI
@@ -138,9 +138,7 @@ def movimentar(
     return {"status": "ok", "mensagem": mensagens}
 
 
-    
-    
-    
+
 @app.post("/token")
 def login(
     username: str = Form(...),
@@ -156,6 +154,9 @@ def login(
     return {"access_token": token, "token_type": "bearer"}
 
 
+@app.get("/status")
+def status():
+    return {"status": "ok"}
 
     
     
