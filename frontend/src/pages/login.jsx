@@ -28,7 +28,7 @@ export default function Login() {
       const res = await api.post(
         "/token",
         new URLSearchParams({ username, password }),
-        { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+        { headers: { "Content-Type": "application/x-www-form-urlencoded" }, timeout: 20000 }
       );
 
       const token = res.data.access_token;
@@ -42,7 +42,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gray-950 text-white">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white">
       {/* Logo no fundo */}
       <img
         src="/logo.png"
@@ -97,6 +97,13 @@ export default function Login() {
           )}
         </button>
       </form>
+
+      {/* 🔹 Mensagem abaixo do formulário */}
+      {loading && (
+        <p className="mt-4 text-yellow-400 text-center">
+          ⏳ Aguarde, conectando ao servidor...
+        </p>
+      )}
     </div>
   );
 }

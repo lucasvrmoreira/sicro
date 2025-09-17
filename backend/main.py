@@ -154,9 +154,5 @@ def login(
     return {"access_token": token, "token_type": "bearer"}
 
 
-@app.get("/status")
-def status():
-    return {"status": "ok"}
 
-    
     
