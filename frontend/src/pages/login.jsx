@@ -1,17 +1,28 @@
+// src/pages/login.jsx
 import { useState, useEffect } from "react";
 import api from "../api.js";
 import { useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import cosmosAnimation from "../assets/Cosmos.json";
+import { getToken, isTokenValid } from "../utils/auth";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showWelcome, setShowWelcome] = useState(true);
-  const [loading, setLoading] = useState(false); // controla animação
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  // 🔹 Se já tiver token válido e abrir /login, redireciona para /home
+  useEffect(() => {
+    const token = getToken();
+    if (isTokenValid(token)) {
+      navigate("/home", { replace: true });
+    }
+  }, [navigate]);
+
+  // Animação de boas-vindas
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowWelcome(false);
@@ -26,7 +37,7 @@ export default function Login() {
 
     try {
       const res = await api.post(
-        "/token",
+        "/api/token",
         new URLSearchParams({ username, password }),
         { headers: { "Content-Type": "application/x-www-form-urlencoded" }, timeout: 20000 }
       );
@@ -34,10 +45,11 @@ export default function Login() {
       const token = res.data.access_token;
       localStorage.setItem("token", token);
 
-      navigate("/saldo");
+      // 🔹 Após login bem-sucedido, sempre vai para /home
+      navigate("/home", { replace: true });
     } catch (err) {
       setError("Usuário ou senha incorretos");
-      setLoading(false); // volta pro texto se der erro
+      setLoading(false);
     }
   };
 
@@ -52,8 +64,8 @@ export default function Login() {
 
       {/* Mensagem de boas-vindas */}
       {showWelcome && (
-        <div className="absolute top-10 text-center animate-fade-in-out">
-          <h2 className="text-xl font-bold">Bem-vindo ao SICRO</h2>
+        <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-black/50 px-6 py-4 rounded-xl shadow-md text-center">
+          <h2 className="text-2xl font-bold text-blue-400">Bem-vindo ao SICRO</h2>
           <p className="text-gray-300 text-sm">
             Sistema de Controle de Roupas Estéreis Cellavita
           </p>
@@ -63,11 +75,15 @@ export default function Login() {
       {/* Formulário */}
       <form
         onSubmit={handleLogin}
-        className="relative bg-black bg-opacity-70 p-6 rounded-xl shadow-lg w-80"
+        className="relative bg-black bg-opacity-40 p-8 rounded-xl shadow-lg w-90"
       >
-        <h1 className="text-2xl font-bold mb-4 text-center">Login</h1>
+        <h1 className="text-3xl font-bold mb-4 text-center">Login</h1>
 
-        {error && <p className="text-red-400 mb-2 text-center">{error}</p>}
+        {error && (
+          <div className="mb-3 p-2 bg-red-900/50 border border-red-500 text-red-300 text-sm rounded text-center">
+            ⚠️ {error}
+          </div>
+        )}
 
         <input
           type="text"
@@ -100,9 +116,12 @@ export default function Login() {
 
       {/* 🔹 Mensagem abaixo do formulário */}
       {loading && (
-        <p className="mt-4 text-yellow-400 text-center">
-          ⏳ Aguarde, conectando ao servidor...
-        </p>
+        <div className="absolute bottom-8 w-full flex flex-col items-center">
+          <span className="text-2xl animate-bounce">⏳</span>
+          <p className="text-blue-400 font-semibold text-lg tracking-wide mt-2 animate-pulse">
+            Aguarde, conectando ao servidor...
+          </p>
+        </div>
       )}
     </div>
   );
