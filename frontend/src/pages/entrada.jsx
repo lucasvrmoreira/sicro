@@ -1,5 +1,7 @@
 import { useState } from "react";
 import api from "../api.js";
+import toast from "react-hot-toast";
+
 
 export default function Entrada() {
   const [movimentacoes, setMovimentacoes] = useState([]);
@@ -10,7 +12,7 @@ export default function Entrada() {
   // Adiciona item ao carrinho
   const adicionarItem = () => {
     if (!novoItem.tipo || !novoItem.quantidade) {
-      alert("Preencha o tipo e a quantidade.");
+      toast.error("❌ Preencha o tipo e a quantidade.");
       return;
     }
     setMovimentacoes([...movimentacoes, novoItem]);
@@ -32,15 +34,16 @@ export default function Entrada() {
           acao: "entrada",
         })),
       };
-      const res = await api.post("/movimentar", payload);
-      alert(res.data.mensagem.join("\n"));
+      const res = await api.post("/api/movimentar", payload);
+      toast.success("✅ Entradas registradas com sucesso!");
       setMovimentacoes([]); // limpa carrinho
+
     } catch (err) {
       console.error(err);
       if (err.response && err.response.status === 403) {
-        alert("Você não tem autorização para registrar entradas.");
+        toast.error("🚫 Você não tem autorização para registrar entradas.");
       } else {
-        alert("Erro ao registrar entradas.");
+        toast.error("❌ Erro ao registrar entradas.");
       }
     }
   };
@@ -116,20 +119,27 @@ export default function Entrada() {
             {movimentacoes.map((m, i) => (
               <li
                 key={i}
-                className="flex justify-between items-center bg-gray-800 p-2 rounded"
+                className="flex justify-between items-center bg-gray-800 p-3 rounded-lg shadow-md"
               >
-                <span>
-                  {m.tipo} {m.tamanho && `(${m.tamanho})`} - {m.quantidade} un.
-                </span>
+                <div>
+                  <span className="font-semibold text-green-300">{m.tipo}</span>
+                  {m.tamanho && (
+                    <span className="ml-2 text-gray-400">({m.tamanho})</span>
+                  )}
+                  <span className="ml-3 px-2 py-1 bg-green-600 text-white text-xs rounded-full">
+                    {m.quantidade} un.
+                  </span>
+                </div>
                 <button
                   onClick={() => removerItem(i)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-400 hover:text-red-600 transition"
                 >
-                  Remover
+                  🗑️
                 </button>
               </li>
             ))}
           </ul>
+
         )}
 
         {movimentacoes.length > 0 && (
