@@ -16,11 +16,12 @@ load_dotenv()
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 10))
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 # cria a aplicação FastAPI
 app = FastAPI()
+
 models.Base.metadata.create_all(bind=database.engine)
 
 # habilita CORS (permitir frontend acessar)
@@ -41,7 +42,7 @@ app.add_middleware(
 
 
 # Dependência do FastAPI para pegar token no header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
 
 # Contexto para criptografar/verificar senhas
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -89,13 +90,13 @@ class Movimentacoes(BaseModel):
     itens: List[Movimentacao]
 
 # --- Endpoints ---
-@app.get("/saldo")
+@app.get("/api/saldo")
 def get_saldo(db: Session = Depends(get_db), token: dict = Depends(verificar_token)):
     roupas = db.query(models.Roupa).all()
     return [{"tipo": r.tipo, "tamanho": r.tamanho, "saldo": r.saldo} for r in roupas]
 
 
-@app.post("/movimentar")
+@app.post("/api/movimentar")
 def movimentar(
     movs: Movimentacoes,
     db: Session = Depends(get_db),
@@ -139,7 +140,7 @@ def movimentar(
 
 
 
-@app.post("/token")
+@app.post("/api/token")
 def login(
     username: str = Form(...),
     password: str = Form(...),
