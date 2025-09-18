@@ -6,9 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/saldo": "http://localhost:8000",
-      "/movimentar": "http://localhost:8000",
-      "/token": "http://localhost:8000",
+      "/api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
     },
   },
 });
