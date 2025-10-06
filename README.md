@@ -45,5 +45,6 @@ O sistema possui **frontend em React vite + TailwindCSS** e **backend  em FastAP
 
 ---
 
-## Estrutura do Projeto
+
+
 
