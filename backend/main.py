@@ -95,7 +95,22 @@ class Movimentacoes(BaseModel):
 @app.get("/api/saldo")
 def get_saldo(db: Session = Depends(get_db), token: dict = Depends(verificar_token)):
     roupas = db.query(models.Roupa).all()
-    return [{"tipo": r.tipo, "tamanho": r.tamanho, "saldo": r.saldo} for r in roupas]
+
+    # ordem personalizada dos tipos e tamanhos
+    ordem_tipos = ["Macacão", "Botas", "Panos", "Óculos"]
+    ordem_tamanhos = ["PP", "P", "M", "G", "GG", "G3", "G4"]
+
+    # ordena primeiro por tipo (seguindo ordem_tipos), depois por tamanho
+    roupas_ordenadas = sorted(
+        roupas,
+        key=lambda r: (
+            ordem_tipos.index(r.tipo) if r.tipo in ordem_tipos else 999,
+            ordem_tamanhos.index(r.tamanho) if r.tamanho in ordem_tamanhos else 999
+        )
+    )
+
+    return [{"tipo": r.tipo, "tamanho": r.tamanho, "saldo": r.saldo} for r in roupas_ordenadas]
+
 
 
 @app.post("/api/movimentar")
