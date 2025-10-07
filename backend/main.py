@@ -27,8 +27,10 @@ models.Base.metadata.create_all(bind=database.engine)
 # habilita CORS (permitir frontend acessar)
 
 origins = [
-    "http://localhost:5173",              # dev local
-    "https://sicro-bqcl.vercel.app"       # produção no Vercel
+    "http://localhost:5173",                # ambiente local
+    "https://sicro-bqcl.vercel.app",        # frontend Vercel
+    "https://sicro.onrender.com",           # backend Render (produção)
+    "https://www.sicro.onrender.com"        # variação com www (por segurança)
 ]
 
 app.add_middleware(
