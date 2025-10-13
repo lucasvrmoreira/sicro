@@ -17,14 +17,13 @@ export default function Saldo() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("access_token");
     if (!token) {
       navigate("/login");
       return;
     }
 
-    api
-      .get("/api/saldo")
+    api.get("/api/saldo", { withCredentials: true })
       .then((res) => {
         console.log("📊 Resposta saldo:", res.data);
         setEstoque(organizarPorTipo(res.data));
@@ -39,7 +38,7 @@ export default function Saldo() {
 
         // se o token expirou ou é inválido
         if (err.response?.status === 401) {
-          localStorage.removeItem("token");
+          const token = localStorage.getItem("access_token");
           navigate("/login");
         } else {
           setLoading(false);
@@ -66,7 +65,7 @@ export default function Saldo() {
           <div
             key={tipo}
             className="bg-gray-800/40 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
-          
+
             <h2 className="text-lg font-bold mb-4 border-b border-gray-700 pb-2 text-center">
               {tipo}
             </h2>
@@ -81,10 +80,10 @@ export default function Saldo() {
                   </span>
                   <span
                     className={`font-bold ${item.saldo === 0
-                        ? "text-red-400" // vermelho quando zerado
-                        : item.saldo < 5
-                          ? "text-yellow-400" // amarelo quando baixo
-                          : "text-green-400" // verde quando suficiente
+                      ? "text-red-400" // vermelho quando zerado
+                      : item.saldo < 5
+                        ? "text-yellow-400" // amarelo quando baixo
+                        : "text-green-400" // verde quando suficiente
                       }`}
                   >
                     {item.saldo}

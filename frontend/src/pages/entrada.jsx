@@ -34,7 +34,7 @@ export default function Entrada() {
           acao: "entrada",
         })),
       };
-      const res = await api.post("/api/movimentar", payload);
+      const res = await api.post("/api/movimentar", payload, { withCredentials: true });
       toast.success("✅ Entradas registradas com sucesso!");
       setMovimentacoes([]); // limpa carrinho
 

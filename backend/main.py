@@ -1,176 +1,61 @@
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from backend import models, database
-from typing import Optional, List
+# backend/main.py
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import datetime, timedelta
-from jose import JWTError, jwt # type: ignore
-from fastapi import Depends, HTTPException, status, Form
-from fastapi.security import OAuth2PasswordBearer
-from passlib.context import CryptContext # type: ignore
-from dotenv import load_dotenv
-import os
-from fastapi.middleware.cors import CORSMiddleware
-load_dotenv()
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from backend.routes import auth, estoque, movimentacao, roupa, usuario
+from backend.database.connection import engine
+import logging, traceback
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+app = FastAPI(
+    title="Sistema de Controle de Roupas Estéreis",
+    version="1.0.0",
+    description="API para controle e rastreio de roupas estéreis"
+)
 
-# cria a aplicação FastAPI
-app = FastAPI()
+# 🧠 Logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-models.Base.metadata.create_all(bind=database.engine)
-
-# habilita CORS (permitir frontend acessar)
-
+# 🌐 CORS
 origins = [
-    "http://localhost:5173",                # ambiente local
-    "https://sicro-bqcl.vercel.app",        # frontend Vercel
-    "https://sicro.onrender.com",           # backend Render (produção)
-    "https://www.sicro.onrender.com"        # variação com www (por segurança)
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://sicro-bqcl.vercel.app",  # domínio exato do frontend na Vercel
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # usa a lista com localhost e vercel
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-
-# Dependência do FastAPI para pegar token no header
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
-
-# Contexto para criptografar/verificar senhas
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-
-
-
-# Funções auxiliares
-def criar_token(data: dict, expires_delta: int = ACCESS_TOKEN_EXPIRE_MINUTES):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=expires_delta)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-def verificar_token(token: str = Depends(oauth2_scheme)):
+# 💥 Middleware de erro global
+@app.middleware("http")
+async def global_error_handler(request: Request, call_next):
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido ou expirado",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        return await call_next(request)
+    except Exception as e:
+        logging.error(f"Erro interno: {e}", exc_info=True)
+        traceback.print_exc()
+        return JSONResponse(status_code=500, content={"detail": "Erro interno do servidor"})
+
+# 🚫 Handlers de erros
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc):
+    return JSONResponse(status_code=exc.status_code, content={"detail": str(exc.detail)})
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc):
+    return JSONResponse(status_code=422, content={"detail": "Erro de validação", "errors": exc.errors()})
+
+# 🧩 Rotas
+app.include_router(auth.router, prefix="/api")
+app.include_router(estoque.router, prefix="/api")
 
 
-# conexão com DB
-def get_db():
-    db = database.SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-# --- Schemas ---
-class Movimentacao(BaseModel):
-    tipo: str
-    tamanho: Optional[str] = None
-    quantidade: int
-    acao: str  # "entrada" ou "saida"
-
-class Movimentacoes(BaseModel):
-    itens: List[Movimentacao]
-
-# --- Endpoints ---
-@app.get("/api/saldo")
-def get_saldo(db: Session = Depends(get_db), token: dict = Depends(verificar_token)):
-    roupas = db.query(models.Roupa).all()
-
-    # ordem personalizada dos tipos e tamanhos
-    ordem_tipos = ["Macacão", "Botas", "Panos", "Óculos"]
-    ordem_tamanhos = ["PP", "P", "M", "G", "GG", "G3", "G4"]
-
-    # ordena primeiro por tipo (seguindo ordem_tipos), depois por tamanho
-    roupas_ordenadas = sorted(
-        roupas,
-        key=lambda r: (
-            ordem_tipos.index(r.tipo) if r.tipo in ordem_tipos else 999,
-            ordem_tamanhos.index(r.tamanho) if r.tamanho in ordem_tamanhos else 999
-        )
-    )
-
-    return [{"tipo": r.tipo, "tamanho": r.tamanho, "saldo": r.saldo} for r in roupas_ordenadas]
-
-
-
-@app.post("/api/movimentar")
-def movimentar(
-    movs: Movimentacoes,
-    db: Session = Depends(get_db),
-    token: dict = Depends(verificar_token)
-):
-    # só admin pode movimentar
-    if token.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Acesso negado: apenas administradores podem movimentar estoque")
-
-    mensagens = []
-
-    for mov in movs.itens:
-        roupa = db.query(models.Roupa).filter_by(
-            tipo=mov.tipo,
-            tamanho=mov.tamanho
-        ).first()
-
-        if mov.acao == "entrada":
-            if roupa:
-                roupa.saldo += mov.quantidade
-            else:
-                roupa = models.Roupa(
-                    tipo=mov.tipo,
-                    tamanho=mov.tamanho,
-                    saldo=mov.quantidade
-                )
-                db.add(roupa)
-            mensagens.append(f"Entrada de {mov.quantidade} {mov.tipo} {mov.tamanho or ''}".strip())
-
-        elif mov.acao == "saida":
-            if not roupa:
-                mensagens.append(f"Erro: {mov.tipo} {mov.tamanho or ''} não encontrado no estoque")
-            elif roupa.saldo < mov.quantidade:
-                mensagens.append(f"Erro: saldo insuficiente para {mov.tipo} {mov.tamanho or ''}")
-            else:
-                roupa.saldo -= mov.quantidade
-                mensagens.append(f"Saída de {mov.quantidade} {mov.tipo} {mov.tamanho or ''}".strip())
-
-    db.commit()
-    return {"status": "ok", "mensagem": mensagens}
-
-
-
-@app.post("/api/token")
-def login(
-    username: str = Form(...),
-    password: str = Form(...),
-    db: Session = Depends(get_db)
-):
-    user = db.query(models.Usuario).filter(models.Usuario.username == username).first()
-
-    if not user or not pwd_context.verify(password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Usuário ou senha incorretos")
-
-    token = criar_token({"sub": username, "role": user.role})
-    return {"access_token": token, "token_type": "bearer"}
-
-
-
-    
+@app.get("/")
+def root():
+    return {"message": "API Sicro rodando 🚀"}

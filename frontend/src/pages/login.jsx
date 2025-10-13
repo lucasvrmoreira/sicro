@@ -43,7 +43,8 @@ export default function Login() {
       );
 
       const token = res.data.access_token;
-      localStorage.setItem("token", token);
+      localStorage.setItem("access_token", token);
+
 
       // 🔹 Após login bem-sucedido, sempre vai para /home
       navigate("/home", { replace: true });
