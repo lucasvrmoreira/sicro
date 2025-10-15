@@ -49,9 +49,9 @@ export default function Entrada() {
   };
 
   return (
-    <div className="flex gap-6 mt-10 px-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10 px-4">
       {/* Coluna esquerda: formulário */}
-      <div className="bg-gray-900 text-white p-6 rounded-xl shadow-lg w-1/2">
+      <div className="bg-gray-900 text-white p-4 md:p-6 rounded-xl shadow-lg w-full">
         <h1 className="text-2xl font-bold mb-4 text-center">Adicionar Roupa</h1>
 
         {/* Tipo */}
@@ -102,19 +102,21 @@ export default function Entrada() {
 
         <button
           onClick={adicionarItem}
-          className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded font-semibold"
+          className="w-full bg-blue-600 hover:bg-blue-700 p-2 md:p-3 text-sm md:text-base rounded font-semibold"
         >
           + Adicionar
         </button>
+
       </div>
 
       {/* Coluna direita: carrinho */}
-      <div className="bg-gray-900 text-white p-6 rounded-xl shadow-lg w-1/2">
+      <div className="bg-gray-900 text-white p-4 md:p-6 rounded-xl shadow-lg w-full">
         <h2 className="text-xl font-bold mb-4 text-center">Itens adicionados</h2>
 
         {movimentacoes.length === 0 ? (
           <p className="text-gray-400">Nenhum item adicionado</p>
         ) : (
+        <div className="overflow-x-auto">
           <ul className="space-y-2">
             {movimentacoes.map((m, i) => (
               <li
@@ -139,7 +141,7 @@ export default function Entrada() {
               </li>
             ))}
           </ul>
-
+        </div>
         )}
 
         {movimentacoes.length > 0 && (

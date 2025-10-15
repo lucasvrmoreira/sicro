@@ -55,17 +55,18 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white">
+    <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white px-4">
       {/* Logo no fundo */}
       <img
         src="/logo.png"
         alt="Logo"
-        className="absolute inset-0 m-auto w-[600px] max-h-screen opacity-20 block"
+        className="absolute inset-0 m-auto w-[80%] max-w-[300px] md:max-w-[500px] opacity-20 object-contain"
       />
+
 
       {/* Mensagem de boas-vindas */}
       {showWelcome && (
-        <div className="absolute top-10 left-1/2 transform -translate-x-1/2 bg-black/50 px-6 py-4 rounded-xl shadow-md text-center">
+        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-black/50 px-4 md:px-6 py-3 md:py-4 rounded-xl shadow-md text-center w-[90%] max-w-md">
           <h2 className="text-2xl font-bold text-blue-400">Bem-vindo ao SICRO</h2>
           <p className="text-gray-300 text-sm">
             Sistema de Controle de Roupas Estéreis Cellavita
@@ -76,8 +77,9 @@ export default function Login() {
       {/* Formulário */}
       <form
         onSubmit={handleLogin}
-        className="relative bg-black bg-opacity-40 p-8 rounded-xl shadow-lg w-90"
+        className="relative bg-black/50 backdrop-blur-md p-6 md:p-8 rounded-xl shadow-lg w-[90%] max-w-md"
       >
+
         <h1 className="text-3xl font-bold mb-4 text-center">Login</h1>
 
         {error && (
@@ -99,13 +101,13 @@ export default function Login() {
           placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-3 rounded bg-gray-800 border border-gray-600"
+          className="w-full p-2 md:p-3 mb-3 rounded bg-gray-800 border border-gray-600 text-sm md:text-base"
         />
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded font-semibold flex justify-center items-center"
+          className="w-full bg-blue-600 hover:bg-blue-700 p-2 md:p-3 text-sm md:text-base rounded font-semibold flex justify-center items-center"
         >
           {loading ? (
             <Lottie animationData={cosmosAnimation} loop={true} className="w-8 h-8" />
@@ -117,7 +119,7 @@ export default function Login() {
 
       {/* 🔹 Mensagem abaixo do formulário */}
       {loading && (
-        <div className="absolute bottom-8 w-full flex flex-col items-center">
+        <div className="absolute bottom-6 w-full flex flex-col items-center px-4">
           <span className="text-2xl animate-bounce">⏳</span>
           <p className="text-blue-400 font-semibold text-lg tracking-wide mt-2 animate-pulse">
             Aguarde, conectando ao servidor...

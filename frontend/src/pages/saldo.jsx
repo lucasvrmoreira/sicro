@@ -55,17 +55,17 @@ export default function Saldo() {
   }
 
   return (
-    <div className="-mt-5 px-6">
-      <h1 className="text-2xl font-bold text-center text-white mt-1 mb-1">
+    <div className="mt-4 px-3 md:px-6">
+      <h1 className="text-xl md:text-2xl font-bold text-center text-white mt-2 mb-4">
         Saldo do Estoque
       </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="overflow-x-auto pb-4"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {Object.entries(estoque).map(([tipo, itens]) => (
           <div
             key={tipo}
-            className="bg-gray-800/40 backdrop-blur-md p-6 rounded-2xl border border-gray-700 shadow-lg">
-
+            className="bg-gray-800/40 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-gray-700 shadow-lg hover:scale-[1.02] transition-transform">
             <h2 className="text-lg font-bold mb-4 border-b border-gray-700 pb-2 text-center">
               {tipo}
             </h2>
@@ -73,7 +73,7 @@ export default function Saldo() {
               {itens.map((item, i) => (
                 <div
                   key={i}
-                  className="flex justify-between items-center bg-gray-800 px-1 py-1 rounded text-sm"
+                  className="flex justify-between items-center bg-gray-800 px-2 py-1 rounded text-xs md:text-sm"
                 >
                   <span className="text-gray-300">
                     {item.tamanho && item.tamanho !== "-" ? item.tamanho : "Padrão"}

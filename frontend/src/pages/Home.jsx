@@ -14,9 +14,10 @@ function Home() {
   }, [navigate]);
 
   return (
-    <div className="text-white text-center mt-10">
-      <h1 className="text-3xl font-bold">Bem-vindo ao Sistema Sicro</h1>
-    </div>
+    <h1 className="text-2xl md:text-4xl font-bold text-purple-400 drop-shadow-lg">
+      Bem-vindo ao <span className="text-white">Sistema Sicro</span>
+    </h1>
+
   );
 }
 

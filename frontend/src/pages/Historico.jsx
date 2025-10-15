@@ -17,7 +17,7 @@ export default function Historico() {
             try {
                 const resp = await api.get("/api/historico", { withCredentials: true });
                 const data = resp.data;
-                
+
 
                 // 🔹 Agrupar por ordem_id
                 const grupos = {};
@@ -60,15 +60,16 @@ export default function Historico() {
     };
 
     return (
-        <div className="text-white">
-            <h1 className="text-2xl font-bold mb-4 text-purple-400">
+        <div className="text-white px-3 md:px-6">
+            <h1 className="text-xl md:text-2xl font-bold mb-6 text-purple-400 text-center md:text-left">
                 Histórico de Movimentações
             </h1>
+
 
             {carregando ? (
                 <p>Carregando...</p>
             ) : (
-                <div className="overflow-x-auto bg-gray-800 rounded-lg p-4 divide-y divide-gray-700">
+                <div className="overflow-x-auto bg-gray-800/60 backdrop-blur-md rounded-lg p-3 md:p-5 divide-y divide-gray-700 shadow-md">
                     {ordens.length === 0 ? (
                         <p className="text-gray-400 text-center py-4">
                             Nenhuma movimentação encontrada.
@@ -77,16 +78,17 @@ export default function Historico() {
                         ordens.map((ordem, i) => (
                             <div
                                 key={i}
-                                className="p-3 hover:bg-gray-700 transition-all cursor-pointer"
+                                className="p-3 md:p-4 hover:bg-gray-700/70 transition-all cursor-pointer rounded-lg mt-2"
                                 onClick={() => toggleExpand(i)}
                             >
+
                                 {/* Linha principal da ordem */}
                                 <div className="flex justify-between items-center">
                                     <div>
                                         <p className="font-semibold text-purple-300">
                                             {ordem.ordem_id}
                                         </p>
-                                        <p className="text-gray-400 text-sm">
+                                        <p className="text-gray-400 text-xs md:text-sm">
                                             Usuário: {ordem.usuario}
                                         </p>
                                     </div>
@@ -94,8 +96,8 @@ export default function Historico() {
                                     <div className="text-right">
                                         <p
                                             className={`font-bold ${ordem.acao === "entrada"
-                                                    ? "text-green-400"
-                                                    : "text-red-400"
+                                                ? "text-green-400"
+                                                : "text-red-400"
                                                 }`}
                                         >
                                             {ordem.acao.toUpperCase()}
@@ -108,7 +110,7 @@ export default function Historico() {
 
                                 {/* Itens da ordem (expansível) */}
                                 {expandido === i && (
-                                    <div className="mt-3 pl-4 border-l-2 border-purple-600 space-y-1">
+                                    <div className="mt-3 pl-3 md:pl-5 border-l-2 border-purple-600 space-y-1 text-sm md:text-base">
                                         {ordem.itens.map((item, j) => (
                                             <p key={j} className="text-gray-300 text-sm">
                                                 • {item.tipo}{" "}
