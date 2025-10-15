@@ -9,3 +9,8 @@
 .animate-fade-in-out {
   animation: fadeInOut 10s ease-in-out forwards;
 }
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
