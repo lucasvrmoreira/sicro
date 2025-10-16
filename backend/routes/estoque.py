@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from backend.database.connection import SessionLocal
-from backend.routes.roupa import Roupa
-from backend.routes.movimentacao import Movimentacao
+from backend.models.roupa import Roupa
+from backend.models.movimentacao import Movimentacao
 from backend.core.security import verificar_token
 from datetime import datetime
 import uuid

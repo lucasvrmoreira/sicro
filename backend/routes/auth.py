@@ -4,10 +4,12 @@ from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 from backend.database.connection import SessionLocal
-from backend.routes.usuario import Usuario
+from backend.models.usuario import Usuario
 from backend.core.security import verificar_senha
 from dotenv import load_dotenv
 import os
+from fastapi import Depends, Request, Response
+from fastapi.security import OAuth2PasswordRequestForm
 
 load_dotenv()
 
@@ -36,11 +38,12 @@ def criar_token(dados: dict, expires_delta: timedelta, token_type: str):
 # ---------------------------- LOGIN ---------------------------- #
 @router.post("/token")
 def login(
+    request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    response: Response = ...,
-    request: Request = ...,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
+
     usuario = db.query(Usuario).filter(Usuario.username == form_data.username).first()
 
     # 🔹 Debug prints
@@ -73,13 +76,14 @@ def login(
 
     # Define cookie HttpOnly seguro
     response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=REFRESH_TOKEN_EXPIRE_HOURS * 3600,
-    )
+    key="refresh_token",
+    value=refresh_token,
+    httponly=True,
+    secure=(request.url.scheme == "https"),  # https em prod, http no dev
+    samesite="lax",
+    max_age=REFRESH_TOKEN_EXPIRE_HOURS * 3600,
+)
+
 
     return {
         "access_token": access_token,

@@ -6,7 +6,9 @@ from fastapi.security import OAuth2PasswordBearer
 from backend.core.config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/token")
+
+
 
 def criar_token(data: dict):
     to_encode = data.copy()
@@ -28,5 +30,6 @@ def verificar_token(token: str = Depends(oauth2_scheme)):
 def verificar_senha(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-def gerar_hash(password):
+def gerar_hash_senha(password):
     return pwd_context.hash(password)
+

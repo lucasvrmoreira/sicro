@@ -3,6 +3,7 @@ from backend.database.connection import Base
 
 class Roupa(Base):
     __tablename__ = "roupas"
+    __table_args__ = {"schema": "sicro"}
 
     id = Column(Integer, primary_key=True, index=True)
     tipo = Column(String, nullable=False)          # ex: Macacão, Botas...
