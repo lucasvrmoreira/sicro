@@ -19,10 +19,11 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 # 🌐 CORS
 origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://sicro-bqcl.vercel.app",  # domínio exato do frontend na Vercel
+    "http://localhost:5173",                # ambiente local
+    "https://sicro-bqcl.vercel.app",        # seu frontend atual no Vercel
+    "https://www.sicro-bqcl.vercel.app",    # versão com www (por segurança)
 ]
+
 
 app.add_middleware(
     CORSMiddleware,
