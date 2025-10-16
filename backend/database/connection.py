@@ -10,7 +10,13 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 print("DEBUG DATABASE_URL:", DATABASE_URL)  # teste
 
 # Cria engine de conexão
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True
+)
+
+
+
 
 # Cria sessão de conexão
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

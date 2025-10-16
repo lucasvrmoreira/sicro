@@ -7,6 +7,7 @@ BR_TZ = timezone(timedelta(hours=-3))
 
 class Movimentacao(Base):
     __tablename__ = "movimentacoes"
+    __table_args__ = {"schema": "sicro"}  # ✅ adiciona o schema correto
 
     id = Column(Integer, primary_key=True, index=True)
     ordem_id = Column(String, nullable=False)
@@ -16,6 +17,7 @@ class Movimentacao(Base):
     quantidade = Column(Integer, nullable=False)
     acao = Column(String, nullable=False)
     data = Column(
-        DateTime(timezone=True),  # 🔹 informa ao PostgreSQL que este campo usa timezone
-        default=lambda: datetime.now(BR_TZ)  # 🔹 salva já no fuso de Brasília
+        DateTime(timezone=True),
+        default=lambda: datetime.now(BR_TZ)
     )
+

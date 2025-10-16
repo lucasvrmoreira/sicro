@@ -3,6 +3,7 @@ from backend.database.connection import Base
 
 class Usuario(Base):
     __tablename__ = "usuarios"
+    __table_args__ = {"schema": "sicro"}  # ✅ aqui está o segredo
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False)

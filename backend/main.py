@@ -17,21 +17,21 @@ app = FastAPI(
 # 🧠 Logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-# 🌐 CORS
+# 🌐 CORS (deixe por último para garantir headers até em erros)
 origins = [
-    "http://localhost:5173",                # ambiente local
-    "https://sicro-bqcl.vercel.app",        # seu frontend atual no Vercel
-    "https://www.sicro-bqcl.vercel.app",    # versão com www (por segurança)
+    "http://localhost:5173",
+    "https://sicro-bqcl.vercel.app",
+    "https://www.sicro-bqcl.vercel.app",
 ]
-
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=True,  # necessário pq seu axios usa withCredentials
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # 💥 Middleware de erro global
 @app.middleware("http")
