@@ -14,7 +14,7 @@ function Home() {
   }, [navigate]);
 
   return (
-    <h1 className="text-2xl md:text-4xl font-bold text-purple-400 drop-shadow-lg">
+    <h1 className="text-2xl md:text-4xl font-bold text-white-400 drop-shadow-lg">
       Bem-vindo ao <span className="text-white">Sistema Sicro</span>
     </h1>
 
