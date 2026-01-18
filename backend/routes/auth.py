@@ -3,95 +3,72 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from backend.database.connection import SessionLocal
+import os
+
+from backend.core.config import settings
+from backend.database.connection import get_db  # Usando o get_db centralizado
 from backend.models.usuario import Usuario
 from backend.core.security import verificar_senha
-from dotenv import load_dotenv
-import os
-from fastapi import Depends, Request, Response
-from fastapi.security import OAuth2PasswordRequestForm
-
-load_dotenv()
 
 router = APIRouter(tags=["Autenticação"])
 
-SECRET_KEY = os.getenv("SECRET_KEY", "chave_teste_segura")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
-REFRESH_TOKEN_EXPIRE_HOURS = 24  # expira em 24h
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Definimos os tempos de expiração baseados no settings ou valores padrão
+REFRESH_TOKEN_EXPIRE_HOURS = 24
 
 def criar_token(dados: dict, expires_delta: timedelta, token_type: str):
     to_encode = dados.copy()
     expire = datetime.now(timezone.utc) + expires_delta
     to_encode.update({"exp": expire, "token_type": token_type})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    
+    # Aqui usamos o settings centralizado
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt, expire
 
 
 # ---------------------------- LOGIN ---------------------------- #
 @router.post("/token")
-def login(
-    request: Request,
-    response: Response,
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: Session = Depends(get_db),
-):
+def login(response: Response, request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.username == form_data.username).first()
 
-    usuario = db.query(Usuario).filter(Usuario.username == form_data.username).first()
-
-    # 🔹 Debug prints
-    print("=== DEBUG LOGIN ===")
-    print("Username informado:", form_data.username)
-    print("Senha informada:", form_data.password)
-    print("Usuário encontrado:", usuario.username if usuario else None)
-    print("Hash salvo:", usuario.hashed_password if usuario else "N/A")
-    print("====================")
-
-    if not usuario or not verificar_senha(form_data.password, usuario.hashed_password):
+    if not user or not verificar_senha(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Usuário ou senha incorretos")
 
-    # Gera tokens
+    # Access Token (curta duração)
     access_token, exp_access = criar_token(
-        {"sub": usuario.username, "role": usuario.role},
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        {"sub": user.username, "role": user.role},
+        timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         "access"
     )
+
+    # Refresh Token (longa duração)
     refresh_token, exp_refresh = criar_token(
         {
-            "sub": usuario.username,
-            "role": usuario.role,
+            "sub": user.username, 
+            "role": user.role,
             "ip": request.client.host,
-            "agent": request.headers.get("user-agent", "unknown"),
+            "agent": request.headers.get("user-agent", "unknown")
         },
         timedelta(hours=REFRESH_TOKEN_EXPIRE_HOURS),
         "refresh"
     )
 
-    # Define cookie HttpOnly seguro
+    # Salva o refresh token num cookie seguro (HttpOnly)
     response.set_cookie(
-    key="refresh_token",
-    value=refresh_token,
-    httponly=True,
-    secure=(request.url.scheme == "https"),  # https em prod, http no dev
-    samesite="lax",
-    max_age=REFRESH_TOKEN_EXPIRE_HOURS * 3600,
-)
-
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        max_age=REFRESH_TOKEN_EXPIRE_HOURS * 3600,
+        expires=REFRESH_TOKEN_EXPIRE_HOURS * 3600,
+        samesite="lax",
+        secure=False  # Mudar para True se usar HTTPS em produção
+    )
 
     return {
         "access_token": access_token,
-        "token_type": "bearer",
         "expires_in": int(exp_access.timestamp()),
-        "role": usuario.role,
+        "token_type": "bearer",
+        "role": user.role
     }
-
 
 
 # --------------------------- REFRESH --------------------------- #
@@ -102,11 +79,13 @@ def refresh_token(request: Request, response: Response):
         raise HTTPException(status_code=401, detail="Refresh token ausente")
 
     try:
-        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Correção aqui: usando settings.SECRET_KEY e settings.ALGORITHM
+        payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        
         if payload.get("token_type") != "refresh":
             raise HTTPException(status_code=401, detail="Token inválido")
 
-        # Valida IP e navegador
+        # Valida IP e navegador para segurança extra
         if payload.get("ip") != request.client.host or payload.get("agent") != request.headers.get("user-agent", "unknown"):
             raise HTTPException(status_code=403, detail="Dispositivo não reconhecido")
 
@@ -119,7 +98,7 @@ def refresh_token(request: Request, response: Response):
     # Gera novo access token
     access_token, exp_access = criar_token(
         {"sub": username, "role": role},
-        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+        timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         "access"
     )
 
@@ -133,5 +112,5 @@ def refresh_token(request: Request, response: Response):
 # ---------------------------- LOGOUT ---------------------------- #
 @router.post("/logout")
 def logout(response: Response):
-    response.delete_cookie("refresh_token")
+    response.delete_cookie(key="refresh_token", path="/")
     return {"detail": "Logout realizado com sucesso"}

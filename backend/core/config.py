@@ -1,13 +1,19 @@
-import os
-from dotenv import load_dotenv
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 
-load_dotenv()
+class Settings(BaseSettings):
+    # Definimos as variáveis e seus tipos
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    FRONTEND_URL: str = "http://localhost:5173"
+    DATABASE_URL: str
 
-class Settings:
-    SECRET_KEY = os.getenv("SECRET_KEY", "changeme")
-    ALGORITHM = os.getenv("ALGORITHM", "HS256")
-    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
-    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
-    DATABASE_URL = os.getenv("DATABASE_URL")
+    # Configuração para ler o arquivo .env automaticamente
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        env_file_encoding="utf-8",
+        extra="ignore" # Ignora variáveis extras no .env que não estão aqui
+    )
 
 settings = Settings()

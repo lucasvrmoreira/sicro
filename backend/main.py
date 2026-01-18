@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from backend.models import usuario
 from backend.routes import auth, estoque, usuario_routes
 from backend.database.connection import engine
 import logging, traceback
@@ -19,7 +18,7 @@ app = FastAPI(
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 # 🌐 CORS (MANTER ANTES das rotas e dos middlewares personalizados)
-from fastapi.middleware.cors import CORSMiddleware
+
 
 origins = [
     "http://localhost:5173",

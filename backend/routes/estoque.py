@@ -7,6 +7,8 @@ from backend.core.security import verificar_token
 from datetime import datetime
 import uuid
 
+from backend.schemas.estoque import MovimentacaoRequest
+
 router = APIRouter(tags=["Estoque"])
 
 
@@ -40,9 +42,9 @@ def get_saldo(db: Session = Depends(get_db), token: dict = Depends(verificar_tok
 # ----------------------------- MOVIMENTAR ------------------------------ #
 @router.post("/movimentar")
 def movimentar(
-    movs: dict,
+    dados: MovimentacaoRequest,
     db: Session = Depends(get_db),
-    token: dict = Depends(verificar_token)
+    token: dict = Depends(verificar_token),
 ):
     usuario = token.get("sub")
     role = token.get("role")
@@ -55,12 +57,11 @@ def movimentar(
     # 🔹 gera um ID único para a ordem (igual para todos os itens)
     ordem_id = f"ORD-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:4]}"
 
-    for mov in movs.get("itens", []):
-        tipo = mov.get("tipo")
-        tamanho = mov.get("tamanho")
-        quantidade = int(mov.get("quantidade", 0))
-        acao = mov.get("acao")
-
+    for mov in dados.itens:
+        tipo = mov.tipo
+        tamanho = mov.tamanho
+        quantidade = int(mov.quantidade)
+        acao = mov.acao
         roupa = db.query(Roupa).filter_by(tipo=tipo, tamanho=tamanho).first()
 
         if acao == "entrada":
