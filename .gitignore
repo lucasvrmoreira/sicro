@@ -27,3 +27,10 @@ pnpm-debug.log*
 .idea/
 *.swp
 .DS_Store
+
+# --- Python & Backend ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env

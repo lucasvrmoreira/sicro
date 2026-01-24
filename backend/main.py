@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from backend.routes import auth, estoque, usuario_routes
 from backend.database.connection import engine
 import logging, traceback
+from backend.routes.dashboard import entradas
 
 app = FastAPI(
     title="Sistema de Controle de Roupas Estéreis",
@@ -43,6 +44,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api")
 app.include_router(estoque.router, prefix="/api")
 app.include_router(usuario_routes.router, prefix="/api")
+app.include_router(entradas.router, prefix="/api")
 
 # 💥 Middleware de erro global (depois do CORS)
 @app.middleware("http")

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from backend.database.connection import SessionLocal
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc
+from backend.database.connection import get_db
 from backend.models.roupa import Roupa
 from backend.models.movimentacao import Movimentacao
 from backend.core.security import verificar_token
@@ -11,23 +12,17 @@ from backend.schemas.estoque import MovimentacaoRequest
 
 router = APIRouter(tags=["Estoque"])
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 # ------------------------------- SALDO -------------------------------- #
 @router.get("/saldo")
-def get_saldo(db: Session = Depends(get_db), token: dict = Depends(verificar_token)):
-    roupas = db.query(Roupa).all()
+async def get_saldo(db: AsyncSession = Depends(get_db), token: dict = Depends(verificar_token)):
+    # Busca assíncrona
+    result = await db.execute(select(Roupa))
+    roupas = result.scalars().all()
 
     ordem_tipos = ["Macacão", "Botas", "Panos", "Óculos"]
     ordem_tamanhos = ["PP", "P", "M", "G", "GG", "G3", "G4"]
 
+    # Ordenação continua via Python (não muda nada aqui)
     roupas_ordenadas = sorted(
         roupas,
         key=lambda r: (
@@ -41,9 +36,9 @@ def get_saldo(db: Session = Depends(get_db), token: dict = Depends(verificar_tok
 
 # ----------------------------- MOVIMENTAR ------------------------------ #
 @router.post("/movimentar")
-def movimentar(
+async def movimentar(
     dados: MovimentacaoRequest,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     token: dict = Depends(verificar_token),
 ):
     usuario = token.get("sub")
@@ -53,8 +48,6 @@ def movimentar(
         raise HTTPException(status_code=403, detail="Apenas administradores podem movimentar estoque")
 
     mensagens = []
-
-    # 🔹 gera um ID único para a ordem (igual para todos os itens)
     ordem_id = f"ORD-{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:4]}"
 
     for mov in dados.itens:
@@ -62,7 +55,11 @@ def movimentar(
         tamanho = mov.tamanho
         quantidade = int(mov.quantidade)
         acao = mov.acao
-        roupa = db.query(Roupa).filter_by(tipo=tipo, tamanho=tamanho).first()
+
+        # Busca Assíncrona (Substitui o db.query)
+        query = select(Roupa).filter_by(tipo=tipo, tamanho=tamanho)
+        result = await db.execute(query)
+        roupa = result.scalar_one_or_none()
 
         if acao == "entrada":
             if roupa:
@@ -74,7 +71,7 @@ def movimentar(
 
         elif acao == "saida":
             if not roupa:
-                mensagens.append(f"Erro: {tipo} {tamanho or ''} não encontrado no estoque")
+                mensagens.append(f"Erro: {tipo} {tamanho or ''} não encontrado")
                 continue
             if roupa.saldo < quantidade:
                 mensagens.append(f"Erro: saldo insuficiente para {tipo} {tamanho or ''}")
@@ -82,25 +79,29 @@ def movimentar(
             roupa.saldo -= quantidade
             mensagens.append(f"Saída de {quantidade} {tipo} {tamanho or ''}".strip())
 
-        # 🔹 registra todos os itens com o mesmo ordem_id
         registro = Movimentacao(
             ordem_id=ordem_id,
             usuario=usuario,
-            tipo=tipo,
+            tipo=mov.tipo,
             tamanho=tamanho,
             quantidade=quantidade,
-            acao=acao,
+            acao=mov.acao,
         )
         db.add(registro)
 
-    db.commit()
+    # Commit assíncrono
+    await db.commit()
     return {"status": "ok", "ordem_id": ordem_id, "mensagem": mensagens}
 
 
 # ----------------------------- HISTÓRICO ------------------------------ #
 @router.get("/historico")
-def get_historico(db: Session = Depends(get_db), token: dict = Depends(verificar_token)):
-    logs = db.query(Movimentacao).order_by(Movimentacao.data.desc()).limit(200).all()
+async def get_historico(db: AsyncSession = Depends(get_db), token: dict = Depends(verificar_token)):
+    # Select Async com Ordenação e Limite
+    query = select(Movimentacao).order_by(desc(Movimentacao.data)).limit(200)
+    result = await db.execute(query)
+    logs = result.scalars().all()
+    
     return [
         {
             "ordem_id": l.ordem_id,
@@ -109,7 +110,7 @@ def get_historico(db: Session = Depends(get_db), token: dict = Depends(verificar
             "tamanho": l.tamanho,
             "quantidade": l.quantidade,
             "acao": l.acao,
-            "data": l.data.isoformat(),
+            "data": l.data.isoformat() if l.data else None,
         }
         for l in logs
     ]
