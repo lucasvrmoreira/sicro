@@ -9,11 +9,15 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showWelcome, setShowWelcome] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // 🔹 Se já tiver token válido, redireciona para /home
+  // 1. Lógica inteligente para o Welcome: só mostra se não houver a flag na sessão atual
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return !sessionStorage.getItem("welcomeDisplayed");
+  });
+
+  // Redireciona se já estiver logado
   useEffect(() => {
     const token = getToken();
     if (isTokenValid(token)) {
@@ -21,13 +25,16 @@ export default function Login() {
     }
   }, [navigate]);
 
-  // Animação de boas-vindas (some após 3s)
+  // Timer para sumir com o Welcome e marcar como "visto" nesta sessão
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowWelcome(false);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (showWelcome) {
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+        sessionStorage.setItem("welcomeDisplayed", "true");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showWelcome]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -38,31 +45,41 @@ export default function Login() {
       const res = await api.post(
         "/api/token",
         new URLSearchParams({ username, password }),
-        { headers: { "Content-Type": "application/x-www-form-urlencoded" }, timeout: 20000 }
+        { 
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          // Aumentado para 60s para dar tempo do Render acordar (Spin down)
+          timeout: 60000 
+        }
       );
 
       const token = res.data.access_token;
       localStorage.setItem("access_token", token);
-
-      // Após login, vai para home
       navigate("/home", { replace: true });
     } catch (err) {
-      setError("Usuário ou senha incorretos");
       setLoading(false);
+      
+      // Diferenciação de erros para o usuário
+      if (err.code === 'ECONNABORTED' || !err.response) {
+        setError("O servidor está iniciando... Aguarde alguns segundos e tente novamente.");
+      } else if (err.response.status === 401) {
+        setError("Usuário ou senha incorretos");
+      } else {
+        setError("Erro de conexão com o servidor seguro.");
+      }
     }
   };
 
   return (
     <div className="relative flex flex-col items-center justify-center min-h-screen bg-gray-950 text-white px-4">
       
-      {/* Logo de Fundo (Marca d'água) */}
+      {/* Logo de Fundo */}
       <img
         src="/logo.png"
         alt="Logo"
         className="absolute inset-0 m-auto w-[80%] max-w-[300px] md:max-w-[500px] opacity-20 object-contain pointer-events-none"
       />
 
-      {/* Mensagem Flutuante de Boas-vindas */}
+      {/* Mensagem Flutuante  */}
       {showWelcome && (
         <div className="absolute top-8 left-1/2 transform -translate-x-1/2 bg-blue-900/80 backdrop-blur-md px-6 py-4 rounded-2xl shadow-2xl border border-blue-500/30 text-center w-[90%] max-w-md animate-slideDown z-50">
           <h2 className="text-xl font-bold text-blue-200">Bem-vindo ao SICRO</h2>
@@ -82,15 +99,21 @@ export default function Login() {
             <p className="text-gray-400 text-sm mt-2">Identifique-se para continuar</p>
         </div>
 
-        {/* Mensagem de Erro */}
+        {/* Mensagem de Erro Dinâmica */}
         {error && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 text-red-200 text-sm rounded-xl text-center flex items-center justify-center gap-2 animate-pulse">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div className={`mb-6 p-3 border text-sm rounded-xl text-center flex items-center justify-center gap-2 animate-pulse ${
+            error.includes("iniciando") 
+              ? "bg-amber-500/10 border-amber-500/50 text-amber-200" 
+              : "bg-red-500/10 border-red-500/50 text-red-200"
+          }`}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             {error}
           </div>
         )}
 
-        {/* Input Usuário com Ícone */}
+        {/* Usuário */}
         <div className="relative mb-5 group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-gray-500 group-focus-within:text-blue-500 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -106,7 +129,7 @@ export default function Login() {
           />
         </div>
 
-        {/* Input Senha com Ícone */}
+        {/* Senha */}
         <div className="relative mb-8 group">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-gray-500 group-focus-within:text-blue-500 transition-colors duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -122,7 +145,7 @@ export default function Login() {
           />
         </div>
 
-        {/* Botão de Entrar */}
+        {/* Botão com Lottie */}
         <button
           type="submit"
           disabled={loading}
@@ -131,7 +154,7 @@ export default function Login() {
           {loading ? (
             <div className="flex items-center gap-2">
                 <Lottie animationData={cosmosAnimation} loop={true} className="w-6 h-6" />
-                <span>Entrando...</span>
+                <span>Conectando...</span>
             </div>
           ) : (
             "Acessar Sistema"
@@ -139,18 +162,18 @@ export default function Login() {
         </button>
       </form>
 
-      {/* Footer / Status de Carregamento Global */}
+      {/* Status de Carregamento para o Render */}
       {loading && (
         <div className="absolute bottom-8 flex flex-col items-center animate-fadeIn">
           <p className="text-blue-400/80 text-sm font-medium tracking-wider uppercase animate-pulse">
-            Conectando ao servidor seguro...
+            Conectando ao servidor... por favor, aguarde um momento.
           </p>
         </div>
       )}
       
       {!loading && (
         <p className="absolute bottom-4 text-gray-600 text-xs">
-            © 2026 Cellavita - Todos os direitos reservados.
+            © 2026 Cellavita - Logística & Tecnologia
         </p>
       )}
     </div>
